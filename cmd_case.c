@@ -76,13 +76,23 @@ void freeCmdCase(CmdCase *cs)
 static CmdCase *buildCase(CmdCase *cs,const char *case_name,int indent)
 {
     if(!cs) return NULL;
-    Output(indent,"case '%c':\n",cs->token);
-    Output(indent + 4,"{\n");
-    buildAst(cs->ast,indent + 8);
-    if(cs->child)
-        Output(indent + 8,"%s%c(stx);\n",case_name,cs->token);
-    Output(indent + 4,"}\n");
-    Output(indent + 4,"break;\n");
+    Output(indent,"case '%c': {\n",cs->token);
+    if(cs->child) {
+        if(cs->ast) {
+            Output(indent + 4,"s16 c = getc(stx);\n");
+            Output(indent + 4,"if(EOF != c) { \n");
+            Output(indent + 8,"ungetc(c,stx);\n",case_name,cs->token);
+            Output(indent + 8,"%s%c(stx);\n",case_name,cs->token);
+            Output(indent + 4,"} else {\n");
+            buildAst(cs->ast,indent + 8);
+            Output(indent + 4,"}\n");
+        } else {
+            Output(indent + 4,"%s%c(stx);\n",case_name,cs->token);
+        }
+    } else {
+        buildAst(cs->ast,indent + 4);
+    }
+    Output(indent,"} break;\n\n");
     buildCase(cs->next,case_name,indent);
     return cs;
 }

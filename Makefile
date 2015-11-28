@@ -6,7 +6,7 @@ CFLAGS := -g -std=gnu99 -DDEBUG
 all : gm 
 	-./$^ fc.ls -o fc #| dot -Tpng -o cmd.png
 	-./$^ cli_api.ls -o cli_api #| dot -Tpng -o cmd.png
-	cp $^ ~/work/clnt/YL/sink/
+	cp $^ ~/work/clnt/8670/src/
 
 OBJS := main.o cmd.tab.o lex.yy.o ast.o cmd_case.o
 
