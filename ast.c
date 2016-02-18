@@ -7,6 +7,7 @@
 #include "cmd_case.h"
 
 static const char *suffix = "\\r\\n";
+static const char *option_bdinit = "{0,0,0}";
 static bool option_ok = false;
 static bool option_cmd = false;
 static bool option_send_length = false;
@@ -173,7 +174,7 @@ static const char *type_init(int type)
     case S16:
     case S32:   return "0";
     case BOOL:  return "FALSE";
-    case BDADDR: return "{0,0, 0}";
+    case BDADDR: return option_bdinit;
     }
     return "0";
 }
@@ -244,7 +245,7 @@ static void cli_parse(CmdCase *cs)
 {
     __begin {
         if(!cs) __break;
-        Output(0,"extern void cli_parse(stream_t *stx)\n{\n");
+        Output(0,"extern void cli_parse(FILE *stx)\n{\n");
         Output(4,"switch(getc(stx)) {\n");
         while(cs) {
             Output(4,"case '%c':\n",cs->token);
@@ -545,6 +546,8 @@ void traverse_ast(Ast *ast)
                         option_cmd = _false(p->value);
                     else if(eq(p->option,"send_length"))
                         option_send_length = _false(p->value);
+                    else if(eq(p->option,"bdinit"))
+                        option_bdinit = p->value;
                     else
                         LOGE("Error : Unknown opption (%s,%s)\n",p->option,p->value);
                 }

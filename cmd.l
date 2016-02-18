@@ -57,8 +57,7 @@ FS  (f|F|l|L)
 \"(\\.|[^\\"\n])*\"     { L_LOGD("%s",yytext);yylval.string = strdup(yytext + 1);yylval.string[strlen(yylval.string) - 1] = 0; return STRING;}
 [ \t\v\f] {;}
 
-&?{ID}                  { L_LOGD("%s",yytext);yylval.symbol = strdup(yytext); return SYMBOL;}
-&?{ID}\.{ID}            { L_LOGD("%s",yytext);yylval.symbol = strdup(yytext); return SYMBOL;}
+&?{ID}(\.{ID})*         { L_LOGD("%s",yytext);yylval.symbol = strdup(yytext); return SYMBOL;}
 &?{ID}->{ID}            { L_LOGD("%s",yytext);yylval.symbol = strdup(yytext); return SYMBOL;}
 
 <*>.        {
@@ -68,6 +67,7 @@ FS  (f|F|l|L)
 \r?\n       {yycolumn = 1;}
 
 %%
+//&?{ID}                  { L_LOGD("%s",yytext);yylval.symbol = strdup(yytext); return SYMBOL;}
 #ifndef yywrap
 int yywrap(void) {return 1;}
 #endif

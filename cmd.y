@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include<ctype.h>
+#include <libgen.h>
 #include "ast.h"
 extern const char *filename;
 void yyerror(char const *s);
@@ -140,15 +141,20 @@ static void header(Ast *ast)
     int i = 0;
     char c;
     char buffer[125];
+    char *fname = strdup(filename);
+    char *bname;
     memset(buffer,0,125);
-    if(filename) {
-        while((c = filename[i]) != 0) {
+    bname = basename(fname);
+    if(bname) {
+        while((c = bname[i]) != 0) {
             buffer[i] = toupper(c);
             i++;
         }
     }
     H_OUT(0,"#ifndef __%s_H__\n#define __%s_H__\n",buffer,buffer);
     H_OUT(0,"#include \"util.h\"\n\n");
+    H_OUT(0,"extern void cli_parse(FILE *stx);\n\n");
     traverse_ast(ast);
     H_OUT(0,"\n#endif\n");
+    free(fname);
 }

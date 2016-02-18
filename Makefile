@@ -4,9 +4,7 @@ CC	:= gcc
 CFLAGS := -g -std=gnu99 -DDEBUG
 
 all : gm 
-	-./$^ fc.ls -o fc #| dot -Tpng -o cmd.png
-	-./$^ cli_api.ls -o cli_api #| dot -Tpng -o cmd.png
-	cp $^ ~/work/clnt/8670/src/
+	-./$^ cmdline.ls -o cmdline #| dot -Tpng -o cmd.png
 
 OBJS := main.o cmd.tab.o lex.yy.o ast.o cmd_case.o
 
@@ -28,4 +26,4 @@ gm : $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean :
-	-rm -f cmd.tab.c cmd.tab.h lex.yy.c *.o cli_api.[ch] *.output fc.[ch]
+	-rm -f cmd.tab.c cmd.tab.h lex.yy.c *.o cli_api.[ch] *.output fc.[ch] cmdline.[ch]
