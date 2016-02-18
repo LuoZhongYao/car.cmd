@@ -103,7 +103,7 @@ static void buildFunction(CmdCase *cs,const char *fn_name)
     __begin {
         if(!cs) __break;
         sprintf(nm,"%s%c",fn_name,cs->token);
-        Output(0,"static void %s(stream_t *stx)\n{\n",nm);
+        Output(0,"static void %s(FILE *stx)\n{\n",nm);
         Output(4,"switch(getc(stx)) {\n");
         buildCase(cs->child,nm,4);
         Output(4,"}\n");
