@@ -248,9 +248,13 @@ static void cli_parse(CmdCase *cs)
         Output(0,"extern void cli_parse(FILE *stx)\n{\n");
         Output(4,"switch(getc(stx)) {\n");
         while(cs) {
-            Output(4,"case '%c':\n",cs->token);
-            Output(8,"cli_case_%c(stx);\n",cs->token);
-            Output(8,"break;\n");
+            Output(4,"case '%c': {\n",cs->token);
+            if(cs->child) {
+                Output(8,"cli_case_%c(stx);\n",cs->token);
+            } else if(cs->ast) {
+                buildAst(cs->ast, 8);
+            }
+            Output(8,"} break;\n");
             cs = cs->next;
         }
         Output(4,"}\n}\n");
@@ -359,6 +363,7 @@ static void cli_ind(Ast *ast)
                     Output(0,";\n");
                 }
                 Output(4,"struct iovec *iov = malloc(%u * sizeof(struct iovec));\n",nr);
+                Output(4,"assert(iov);\n",nr);
 
                 Output(4,"__IND(iov + _idx,\"%s\");_idx++;\n",c->cmd);
                 if(c->style) {
