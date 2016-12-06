@@ -82,12 +82,12 @@ static CmdCase *buildCase(CmdCase *cs,const char *case_name,int indent)
             Output(indent + 4,"s16 c = getc(stx);\n");
             Output(indent + 4,"if(EOF != c) { \n");
             Output(indent + 8,"ungetc(c,stx);\n",case_name,cs->token);
-            Output(indent + 8,"%s%c(stx);\n",case_name,cs->token);
+            Output(indent + 8,"%s%02x(stx);\n",case_name,cs->token);
             Output(indent + 4,"} else {\n");
             buildAst(cs->ast,indent + 8);
             Output(indent + 4,"}\n");
         } else {
-            Output(indent + 4,"%s%c(stx);\n",case_name,cs->token);
+            Output(indent + 4,"%s%02x(stx);\n",case_name,cs->token);
         }
     } else {
         buildAst(cs->ast,indent + 4);
@@ -102,7 +102,7 @@ static void buildFunction(CmdCase *cs,const char *fn_name)
     char nm[128];
     __begin {
         if(!cs) __break;
-        sprintf(nm,"%s%c",fn_name,cs->token);
+        sprintf(nm,"%s%02x",fn_name,cs->token);
         Output(0,"static void %s(FILE *stx)\n{\n",nm);
         Output(4,"switch(getc(stx)) {\n");
         buildCase(cs->child,nm,4);
@@ -116,7 +116,7 @@ void buildCmdCase(CmdCase *cs,const char *fn_name)
     char nm[128];
     __begin {
         if(!cs) __break;
-        sprintf(nm,"%s%c",fn_name,cs->token);
+        sprintf(nm,"%s%02x",fn_name,cs->token);
         buildCmdCase(cs->child,nm);
         if(cs->child) buildFunction(cs,fn_name);
         buildCmdCase(cs->next,fn_name);

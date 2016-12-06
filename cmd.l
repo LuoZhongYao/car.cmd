@@ -8,6 +8,7 @@
 int yycolumn = 1;
 static char* string(void);
 void yyerror(char const *); 
+void _comment(void);
 extern const char *filename;
 #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;\
     yylloc.first_column = yycolumn;yylloc.last_column = yycolumn + yyleng +1;\
@@ -26,6 +27,8 @@ FS  (f|F|l|L)
 
 %%
 ";"[^\n]*               { /* comment */ }
+"//"[^\n]*              { /* comment */ }
+"/*"                    { _comment(); }
 "{"                     { L_LOGD("%c",yytext[0]); return '{'; }     
 "}"                     { L_LOGD("%c",yytext[0]); return '}'; }     
 "["                     { L_LOGD("%c",yytext[0]); return '['; }     
@@ -44,6 +47,9 @@ FS  (f|F|l|L)
 "s8"                    { L_LOGD("%s",yytext); return S8; }
 "s16"                   { L_LOGD("%s",yytext); return S16; }
 "s32"                   { L_LOGD("%s",yytext); return S32; }
+"i8"                    { L_LOGD("%s",yytext); return S8; }
+"i16"                   { L_LOGD("%s",yytext); return S16; }
+"i32"                   { L_LOGD("%s",yytext); return S32; }
 "void"                  { L_LOGD("%s",yytext); return VOID;}
 "char"                  { L_LOGD("%s",yytext); return CHAR;}
 "const"                 { L_LOGD("%s",yytext); return CONST;}
@@ -93,7 +99,21 @@ static char *string(void)
     yyerror("unterminated keep");
     return NULL;
 }
+
 void yyerror(char const *s)
 {
     fprintf(stderr,"%s.ls:%d:%d %s: %s\n", filename,yylloc.last_line,yylloc.last_column,s,yytext);
+}
+
+void _comment(void)
+{
+    char c, prev = 0;
+  
+    while ((c = input()) != 0)      /* (EOF maps to 0) */
+    {
+        if (c == '/' && prev == '*')
+            return;
+        prev = c;
+    }
+    yyerror("unterminated comment");
 }

@@ -250,7 +250,7 @@ static void cli_parse(CmdCase *cs)
         while(cs) {
             Output(4,"case '%c': {\n",cs->token);
             if(cs->child) {
-                Output(8,"cli_case_%c(stx);\n",cs->token);
+                Output(8,"cli_case_%02x(stx);\n",cs->token);
             } else if(cs->ast) {
                 buildAst(cs->ast, 8);
             }
