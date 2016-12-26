@@ -7,19 +7,21 @@
 
 #include "util.h"
 
-typedef struct __ast        Ast;
-typedef struct __blocks     Blocks;
-typedef struct __block      Block;
-typedef struct __option     Option;
-typedef struct __cmds       Cmds;
-typedef struct __cmd        Cmd;
-typedef struct __func       Fn;
-typedef struct __style      Style;
-typedef struct __binary     Binary;
-typedef struct __style_list StyleList;
-typedef struct __style_args StyleArgs;
-typedef struct __arg_list   ArgList;
-typedef struct __arg        Arg;
+typedef struct __ast            Ast;
+typedef struct __blocks         Blocks;
+typedef struct __block          Block;
+typedef struct __option         Option;
+typedef struct __cmds           Cmds;
+typedef struct __cmd            Cmd;
+typedef struct __func           Fn;
+typedef struct __style          Style;
+typedef struct __binary         Binary;
+typedef struct __binary_type    BinaryType;
+typedef struct __string_type    StringType;
+typedef struct __style_list     StyleList;
+typedef struct __style_args     StyleArgs;
+typedef struct __arg_list       ArgList;
+typedef struct __arg            Arg;
 
 typedef enum {
     AST_Blocks = 0,
@@ -30,6 +32,8 @@ typedef enum {
     AST_Fn,
     AST_Style,
     AST_Binary,
+    AST_BinaryType,
+    AST_StringType,
     AST_StyleArgs,
     AST_StyleList,
     AST_ArgList,
@@ -79,6 +83,17 @@ struct __binary {
     const char *length;
 };
 
+struct __binary_type {
+    int type;
+    const char *length;
+    const char *value;
+};
+
+struct __string_type {
+    int type;
+    const char *value;
+};
+
 struct __style_list {
     Ast *style;
     Ast *next;
@@ -114,6 +129,8 @@ extern Ast *newCmd(const char *name,Ast *style,Ast *fn);
 extern Ast *newFn(const char *fn,Ast *al);
 extern Ast *newStyle(const char *style,Ast *args,int length);
 extern Ast *newBinary(const char *value,const char *length);
+extern Ast *newBinaryType(int type, const char *value, const char *length);
+extern Ast *newStringType(int type, const char *value);
 extern Ast *newStyleList(Ast *style,Ast *next);
 extern Ast *newStyleArgs(const char *symbol,Ast *next);
 extern Ast *newArgList(Ast *arg,Ast *next);

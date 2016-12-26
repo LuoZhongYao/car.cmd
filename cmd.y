@@ -16,8 +16,8 @@ static void header(Ast *ast);
 
 %start start
 
-%token <string> STRING SYMBOL KEEP
-%token <type>   VOID U8 U16 U32 S8 S16 S32 BOOL CONST CHAR BDADDR
+%token <string> STRING SYMBOL KEEP QUOTE
+%token <type>   VOID U8 U16 U32 S8 S16 S32 BOOL CONST CHAR BDADDR UCS2
 %token <number>  NUMBER
 %type <ast> block_list block cmd_list cmd fun_decal option
 %type <ast> style style_args arg_list arg style_list
@@ -83,18 +83,22 @@ style
                                       length = RENEW(length,"sizeof(\"%s\") - 1",$1);
                                       $$ = newBinary(string,length);
                                       free($1); }
-    | NUMBER                        { char *number = malloc(24);
-                                      char *style  = strdup("%c");
-                                      number = RENEW(number,"%#x",$1);
-                                      $$ = newStyle(style,newStyleArgs(number,NULL),1); }
     | SYMBOL                        { char *buffer = malloc(64);
                                       buffer = RENEW(buffer,"sizeof(*(%s))",$1);
                                       $$ = newBinary($1,buffer);}
     | SYMBOL ':' NUMBER             { char *buffer = malloc(24);
-                                      buffer = RENEW(buffer,"%d",$3);
-                                      $$ = newBinary($1,buffer);}
-    | SYMBOL ':' SYMBOL             { $$ = newBinary($1,$3);}
-    | '(' STRING ',' style_args ')' ':' NUMBER  { $$ = newStyle($2,$4,$7);}
+                                      buffer = RENEW(buffer, "%d", $3);
+                                      $$ = newBinary($1, buffer);}
+    | NUMBER '@' arg_type           { char *number = malloc(24);
+                                      number = RENEW(number, "%d", $1);
+                                      $$ = newBinaryType($3, number, NULL);}
+    | SYMBOL ':' SYMBOL             { $$ = newBinary($1, $3);}
+    | SYMBOL ':' SYMBOL '@' arg_type{ $$ = newBinaryType($5, $1, $3);}
+    | SYMBOL '@' arg_type           { $$ = newBinaryType($3, $1, NULL);}
+    | QUOTE  '@' arg_type           { $$ = newBinaryType($3, $1, NULL);}
+    | SYMBOL '@' '{' arg_type '}'   { $$ = newStringType($4, $1);}
+    | QUOTE  '@' '{' arg_type '}'   { $$ = newStringType($4, $1);}
+    | '(' STRING ',' style_args ')' ':' NUMBER  { $$ = newStyle($2, $4,$7);}
     ;
 
 style_args
@@ -132,6 +136,7 @@ arg_type
     | BOOL      { $$ = BOOL;}
     | CHAR      { $$ = U8; } 
     | BDADDR    { $$ = BDADDR; }
+    | UCS2      { $$ = UCS2; }
     ;
 
 %%

@@ -38,6 +38,7 @@ FS  (f|F|l|L)
 "("                     { L_LOGD("%c",yytext[0]); return '('; }     
 ")"                     { L_LOGD("%c",yytext[0]); return ')'; }     
 ","                     { L_LOGD("%c",yytext[0]); return ','; }     
+"@"                     { L_LOGD("%c",yytext[0]); return '@'; }
 ":"                     { L_LOGD("%c",yytext[0]); return ':'; }
 "%"                     { L_LOGD("%c",yytext[0]); return '%'; }
 "+"                     { L_LOGD("%c",yytext[0]); return '+'; }
@@ -52,15 +53,18 @@ FS  (f|F|l|L)
 "i32"                   { L_LOGD("%s",yytext); return S32; }
 "void"                  { L_LOGD("%s",yytext); return VOID;}
 "char"                  { L_LOGD("%s",yytext); return CHAR;}
+"UCS2"                  { L_LOGD("%s",yytext); return UCS2;}
 "const"                 { L_LOGD("%s",yytext); return CONST;}
 "bool"                  { L_LOGD("%s",yytext); return BOOL;}
 "bdaddr"                { L_LOGD("%s",yytext); return BDADDR;}
 "%{"                    { L_LOGD("%s",yytext); yylval.string = string();return STRING;}
 
-[1-9]{D}*{IS}?          { L_LOGD("%s",yytext);yylval.number = strtol(yytext,NULL,0); return NUMBER;}
-0[xX]{H}+{IS}?          { L_LOGD("%s",yytext);yylval.number = strtol(yytext,NULL,0); return NUMBER;}
-0[0-7]*{IS}?            { L_LOGD("%s",yytext);yylval.number = strtol(yytext,NULL,0); return NUMBER;}
-\"(\\.|[^\\"\n])*\"     { L_LOGD("%s",yytext);yylval.string = strdup(yytext + 1);yylval.string[strlen(yylval.string) - 1] = 0; return STRING;}
+'.'                     { L_LOGD("%s",yytext); yylval.number = yytext[1]; return NUMBER;}
+[1-9]{D}*{IS}?          { L_LOGD("%s",yytext); yylval.number = strtol(yytext,NULL,0); return NUMBER;}
+0[xX]{H}+{IS}?          { L_LOGD("%s",yytext); yylval.number = strtol(yytext,NULL,0); return NUMBER;}
+0[0-7]*{IS}?            { L_LOGD("%s",yytext); yylval.number = strtol(yytext,NULL,0); return NUMBER;}
+\"(\\.|[^\\"\n])*\"     { L_LOGD("%s",yytext); yylval.string = strdup(yytext + 1);yylval.string[strlen(yylval.string) - 1] = 0; return STRING;}
+`(\\.|[^\`\n])*`        { L_LOGD("%s",yytext); yylval.string = strdup(yytext + 1);yylval.string[strlen(yylval.string) - 1] = 0; return QUOTE;}
 [ \t\v\f] {;}
 
 &?{ID}(\.{ID})*         { L_LOGD("%s",yytext);yylval.symbol = strdup(yytext); return SYMBOL;}

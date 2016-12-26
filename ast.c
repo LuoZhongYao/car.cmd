@@ -107,6 +107,25 @@ Ast *newBinary(const char *value,const char *length)
     __leval();
 }
 
+Ast *newBinaryType(int type, const char *value, const char *length)
+{
+    __enter(BinaryType, b);
+    b->value = value;
+    b->length = length;
+    b->type = type;
+
+    __leval();
+}
+
+Ast *newStringType(int type, const char *value)
+{
+    __enter(StringType, b);
+    b->value = value;
+    b->type = type;
+
+    __leval();
+}
+
 Ast *newStyleList(Ast *style,Ast *next)
 {
     __enter(StyleList,s);
@@ -155,9 +174,9 @@ static const char *type_name(int type)
     case U8: return "u8";
     case U16: return "u16";
     case U32: return "u32";
-    case S8: return "s8";
-    case S16: return "s16";
-    case S32: return "s32";
+    case S8: return "i8";
+    case S16: return "i16";
+    case S32: return "i32";
     case BOOL: return "bool";
     case BDADDR: return "bdaddr";
     }
@@ -320,7 +339,14 @@ static int cli_eval_style_nr(Ast *ast)
         switch(ast->type) {
         default: break;
 
+        case AST_BinaryType: {
+            BinaryType *b = __mt(ast, BinaryType);
+            if(b->type == BDADDR) nr += 3;
+            else nr++;
+        } break;
+
         case AST_Style:
+        case AST_StringType:
         case AST_Binary:  nr++; break;
         case AST_StyleList: {
             StyleList *s = __mt(ast,StyleList);
@@ -365,13 +391,13 @@ static void cli_ind(Ast *ast)
                 Output(4,"struct iovec *iov = malloc(%u * sizeof(struct iovec));\n",nr);
                 Output(4,"assert(iov);\n",nr);
 
-                Output(4,"__IND(iov + _idx,\"%s\");_idx++;\n",c->cmd);
+                Output(4,"__WRT(iov + _idx,\"%s\",sizeof(\"%s\") - 1);_idx++;\n",suffix,suffix);
                 if(c->style) {
+                    cli_ind(c->style);
                     if(option_send_length)
                         Output(4,"__WRT(iov + _idx,&_slen,1);_idx++;\n");
-                    cli_ind(c->style);
                 }
-                Output(4,"__WRT(iov + _idx,\"%s\",sizeof(\"%s\") - 1);_idx++;\n",suffix,suffix);
+                Output(4,"__IND(iov + _idx,\"%s\");_idx++;\n",c->cmd);
                 Output(4,"__FLUSH(iov,%u);\n",nr);
                 Output(4,"free(iov);\n}\n\n");
             }
@@ -385,6 +411,7 @@ static void cli_ind(Ast *ast)
                     (Output(0,"void"),H_OUT(0,"void"));
                 Output(0,")\n{\n");
                 H_OUT(0,");\n");
+                H_OUT(0,"#define has_%s\n",fn->fn);
             }
             break;
         case AST_ArgList:
@@ -409,12 +436,40 @@ static void cli_ind(Ast *ast)
                         a->symbol);
             }
             break;
-        case AST_Binary:
-            {
-                Binary *b = __mt(ast,Binary);
-                Output(4,"__WRT(iov + _idx,%s,%s);_idx++;\n",b->value,b->length);
+
+        case AST_Binary: {
+            Binary *b = __mt(ast,Binary);
+            Output(4,"__WRT(iov + _idx,%s,%s);_idx++;\n",b->value,b->length);
+        } break;
+
+        case AST_BinaryType: {
+            BinaryType *b = __mt(ast, BinaryType);
+            switch(b->type) {
+            case BOOL: case CHAR: case  U8: case  S8: Output(4,"__PUT8(iov + _idx, (%s)); _idx++;\n", b->value);  break;
+            case U16: case S16: Output(4,"__PUT16(iov + _idx, (%s)); _idx++;\n", b->value); break;
+            case U32: case S32: Output(4,"__PUT32(iov + _idx, (%s)); _idx++;\n", b->value);  break;
+            case UCS2:   Output(4, "__UCS2(iov + _idx, %s, %s); _idx++;\n", b->value, b->length); break;
+
+            case BDADDR: {
+                Output(4,"__PUT16(iov + _idx, (%s)->nap); _idx++;\n", b->value);
+                Output(4,"__PUT8(iov + _idx,  (%s)->uap); _idx++;\n", b->value);
+                Output(4,"__PUT24(iov + _idx, (%s)->lap); _idx++;\n", b->value);
+            } break;
+
+
             }
-            break;
+        } break;
+
+        case AST_StringType: {
+            StringType *s = __mt(ast, StringType);
+            switch(s->type) {
+            case BOOL: case CHAR: case U8: case S8: Output(4, "__SND(iov + _idx, \"%%02x\", %s); _idx++;\n", s->value); break;
+            case S16:  case U16:  Output(4, "__SND(iov + _idx, \"%%04x\", %s); _idx++;\n", s->value); break;
+            case S32:  case U32:  Output(4, "__SND(iov + _idx, \"\%%08lx\", %s); _idx++;\n", s->value); break;
+            case BDADDR: Output(4, "__SND(iov + _idx, \"%%04x%%02x%%06lx\", %s); _idx++;\n", s->value); break;
+            }
+        } break;
+
         case AST_Style:
             {
                 Style *s = __mt(ast,Style);
@@ -433,8 +488,8 @@ static void cli_ind(Ast *ast)
         case AST_StyleList:
             {
                 StyleList *s = __mt(ast,StyleList);
-                cli_ind(s->style);
                 cli_ind(s->next);
+                cli_ind(s->style);
             }
             break;
         }
@@ -541,20 +596,22 @@ void traverse_ast(Ast *ast)
 #define eq(a,b) !strcmp(a,b)
 #define _false(a) eq(a,"true")
                 if(p->option) {
-                    if(eq(p->option,"keep"))
-                        Output(0,"%s\n",p->value);
-                    else if(eq(p->option,"suffix"))
+                    if(eq(p->option, "hkeep"))
+                        H_OUT(0, "%s\n", p->value);
+                    else if(eq(p->option, "keep") || eq(p->option, "ckeep"))
+                        Output(0,"%s\n", p->value);
+                    else if(eq(p->option, "suffix"))
                         suffix = p->value;
-                    else if(eq(p->option,"ok"))
+                    else if(eq(p->option, "ok"))
                         option_ok = _false(p->value);
-                    else if(eq(p->option,"cmd"))
+                    else if(eq(p->option, "cmd"))
                         option_cmd = _false(p->value);
-                    else if(eq(p->option,"send_length"))
+                    else if(eq(p->option, "send_length"))
                         option_send_length = _false(p->value);
-                    else if(eq(p->option,"bdinit"))
+                    else if(eq(p->option, "bdinit"))
                         option_bdinit = p->value;
                     else
-                        LOGE("Error : Unknown opption (%s,%s)\n",p->option,p->value);
+                        LOGE("Error : Unknown option (%s,%s)\n",p->option,p->value);
                 }
             }
             break;
