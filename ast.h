@@ -63,6 +63,7 @@ struct __cmds {
 
 struct __cmd {
     const char *cmd;
+    const char *rsp;
     Ast *style;
     Ast *fn;
 };
@@ -125,7 +126,7 @@ extern Ast *newBlocks(Ast *blk,Ast *next);
 extern Ast *newBlock(const char *attr,Ast *cmds);
 extern Ast *newOption(const char *option,const char *value);
 extern Ast *newCmds(Ast *cmd,Ast *next);
-extern Ast *newCmd(const char *name,Ast *style,Ast *fn);
+extern Ast *newCmd(const char *name,Ast *style,Ast *fn, const char *rsp);
 extern Ast *newFn(const char *fn,Ast *al);
 extern Ast *newStyle(const char *style,Ast *args,int length);
 extern Ast *newBinary(const char *value,const char *length);

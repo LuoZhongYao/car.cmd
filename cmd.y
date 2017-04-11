@@ -57,8 +57,10 @@ cmd_list
     ;
 
 cmd
-    : '[' STRING ',' style_list ',' fun_decal ']' { $$ = newCmd($2,$4,$6);}
-    | '[' STRING ',' ',' fun_decal ']'            { $$ = newCmd($2,NULL,$5);}
+    : '[' STRING ',' style_list ',' fun_decal ']' { $$ = newCmd($2, $4,   $6, NULL);}
+    | '[' STRING ',' ',' fun_decal ']'            { $$ = newCmd($2, NULL, $5, NULL);}
+    | '[' STRING ',' style_list ',' fun_decal ',' STRING ']' { $$ = newCmd($2, $4, $6, $8);}
+    | '[' STRING ',' ',' fun_decal ',' STRING ']'            { $$ = newCmd($2, NULL, $5, $7);}
     ;
 
 fun_decal

@@ -66,13 +66,14 @@ Ast *newCmds(Ast *cmd,Ast *next)
     __leval();
 }
 
-Ast *newCmd(const char *cmd,Ast *style,Ast *fn)
+Ast *newCmd(const char *cmd,Ast *style,Ast *fn, const char *rsp)
 {
     __enter(Cmd,c);
 
     c->cmd = cmd;
     c->style = style;
     c->fn = fn;
+    c->rsp = rsp;
 
     __leval();
 }
@@ -542,6 +543,9 @@ void buildAst(Ast *ast,int indent)
         Output(0,");\n");
         if(fn->al) {
             arg_free(fn->al,indent);
+        }
+        if(c->rsp) {
+            Output(indent, "__CMD(\"%s%s\");\n", c->rsp, suffix);
         }
         if(option_ok || option_cmd)
             Output(indent,"__CMD(\"%s%s%s\");\n",option_ok ? "OK" : "",
