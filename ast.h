@@ -66,6 +66,7 @@ struct __cmd {
     const char *rsp;
     Ast *style;
     Ast *fn;
+    Ast *next;
 };
 
 struct __func {

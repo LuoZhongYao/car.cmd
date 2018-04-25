@@ -16,7 +16,7 @@ static bool option_send_length = false;
     ast = (Ast*)malloc(sizeof(Ast) + sizeof(T));\
     ast->type = t;ast;})
 
-#define __mt(a,t) (t*)(a)->impl
+#define __mt(a,t) ((t*)(a)->impl)
 
 #define __enter(T,v) Ast *ast = __new(T,AST_ ## T); T * v = __mt(ast,T)
 #define __leval() return ast
@@ -74,6 +74,7 @@ Ast *newCmd(const char *cmd,Ast *style,Ast *fn, const char *rsp)
     c->style = style;
     c->fn = fn;
     c->rsp = rsp;
+    c->next = NULL;
 
     __leval();
 }
@@ -265,16 +266,26 @@ static void cli_parse(CmdCase *cs)
 {
     __begin {
         if(!cs) __break;
-        Output(0,"extern void cli_parse(FILE *stx)\n{\n");
+        Output(0,"extern void user_inter_parse(FILE *stx)\n{\n");
         Output(4,"switch(getc(stx)) {\n");
         while(cs) {
             Output(4,"case '%c': {\n",cs->token);
             if(cs->child) {
-                Output(8,"cli_case_%02x(stx);\n",cs->token);
+                if(cs->ast) {
+                    Output(8, "int c = getc(stx);\n");
+                    Output(8,"if(EOF != c) { \n");
+                    Output(12, "ungetc(c, stx);\n");
+                    Output(12, "user_subcase_%02x(stx)\n", cs->token);
+                    Output(8, "} else {\n");
+                    buildAst(cs->ast, 12);
+                    Output(8, "}\n");
+                } else {
+                    Output(8, "user_subcase_%02x(stx);\n", cs->token);
+                }
             } else if(cs->ast) {
                 buildAst(cs->ast, 8);
             }
-            Output(8,"} break;\n");
+            Output(4,"} break;\n");
             cs = cs->next;
         }
         Output(4,"}\n}\n");
@@ -516,12 +527,46 @@ static CmdCase * cli_cmd(Ast *ast,CmdCase *cs)
             {
                 Cmd *c = __mt(ast,Cmd);
                 CmdCase *pos = createCaseByString(cs,c->cmd);
-                pos->ast = ast;
+                if(pos->ast == NULL) {
+                    pos->ast = ast;
+                } else if(__mt(pos->ast, Cmd)->style == NULL) {
+                    Cmd *_c = __mt(pos->ast, Cmd);
+                    _c->next = ast;
+                } else {
+                    Cmd *_c = __mt(ast, Cmd);
+                    _c->next = pos->ast;
+                    pos->ast = ast;
+                }
             }
             break;
         }
     } __end;
     return cs;
+}
+
+static void buildAstCmd(Cmd *c, int indent)
+{
+    Fn *fn = __mt(c->fn,Fn);
+    if(fn->al) {
+        cli_parse_arg(fn->al,indent,1);
+        Output(indent,"__scanf(stx,\"");
+        cli_parse_style(c->style,false);
+        Output(0,");\n");
+    }
+    Output(indent,"%s(",fn->fn);
+    if(fn->al) {
+        cli_parse_arg(fn->al,indent,0);
+    }
+    Output(0,");\n");
+    if(fn->al) {
+        arg_free(fn->al,indent);
+    }
+    if(c->rsp) {
+        Output(indent, "__CMD(\"%s%s\");\n", c->rsp, suffix);
+    }
+    if(option_ok || option_cmd)
+        Output(indent,"__CMD(\"%s%s%s\");\n",option_ok ? "OK" : "",
+            option_cmd ? c->cmd : "",suffix);
 }
 
 void buildAst(Ast *ast,int indent)
@@ -530,26 +575,17 @@ void buildAst(Ast *ast,int indent)
         if(!ast || ast->type != AST_Cmd) __break;
         Cmd *c = __mt(ast,Cmd);
         Fn *fn = __mt(c->fn,Fn);
-        if(fn->al) {
-            cli_parse_arg(fn->al,indent,1);
-            Output(indent,"__scanf(stx,\"");
-            cli_parse_style(c->style,false);
-            Output(0,");\n");
+        if(c->next != NULL && c->style == NULL) {
+            Output(indent, "int c = getc(stx);\n");
+            Output(indent, "if(EOF != c) { \n");
+            Output(indent + 4, "ungetc(c, stx);\n");
+            buildAstCmd(__mt(c->next, Cmd), indent + 4);
+            Output(indent, "} else {\n");
+            buildAstCmd(c, indent + 4);
+            Output(indent, "}\n");
+        } else {
+            buildAstCmd(c, indent + 4);
         }
-        Output(indent,"%s(",fn->fn);
-        if(fn->al) {
-            cli_parse_arg(fn->al,indent,0);
-        }
-        Output(0,");\n");
-        if(fn->al) {
-            arg_free(fn->al,indent);
-        }
-        if(c->rsp) {
-            Output(indent, "__CMD(\"%s%s\");\n", c->rsp, suffix);
-        }
-        if(option_ok || option_cmd)
-            Output(indent,"__CMD(\"%s%s%s\");\n",option_ok ? "OK" : "",
-                    option_cmd ? c->cmd : "",suffix);
     } __end;
 }
 
@@ -577,8 +613,13 @@ void traverse_ast(Ast *ast)
                     if(!strcmp(blk->attr,"CMD")) {
                         CmdCase _cs = {'_',NULL,NULL,NULL};
                         CmdCase *cs = cli_cmd(blk->cmds,&_cs);
-                        buildCmdCase(cs,"cli_case_");
+                        buildCmdCase(cs,"user_subcase_");
                         cli_parse(cs->next);
+#ifdef DOT
+                        printf("digraph %s {\n",blk->attr);
+                        foreachCmdCase(cs,"");
+                        printf("}\n");
+#endif
                         __test_free(freeCmdCase,_cs.next);
                         __test_free(freeCmdCase,_cs.child);
                     } else if(!strcmp(blk->attr,"IND")) {
@@ -587,11 +628,6 @@ void traverse_ast(Ast *ast)
                         LOGE("Error : Unknown option %s\n",blk->attr);
                     }
                 } __end;
-#ifdef DOT
-                printf("digraph %s {\n",blk->name);
-                foreachCmdCase(cs,"");
-                printf("}\n");
-#endif
             }
             break;
         case AST_Option:

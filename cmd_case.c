@@ -81,7 +81,7 @@ static CmdCase *buildCase(CmdCase *cs,const char *case_name,int indent)
         if(cs->ast) {
             Output(indent + 4,"s16 c = getc(stx);\n");
             Output(indent + 4,"if(EOF != c) { \n");
-            Output(indent + 8,"ungetc(c,stx);\n",case_name,cs->token);
+            Output(indent + 8,"ungetc(c,stx);\n");
             Output(indent + 8,"%s%02x(stx);\n",case_name,cs->token);
             Output(indent + 4,"} else {\n");
             buildAst(cs->ast,indent + 8);

@@ -106,7 +106,7 @@ static char *string(void)
 
 void yyerror(char const *s)
 {
-    fprintf(stderr,"%s.ls:%d:%d %s: %s\n", filename,yylloc.last_line,yylloc.last_column,s,yytext);
+    fprintf(stderr,"%s:%d:%d %s: %s\n", filename,yylloc.last_line,yylloc.last_column,s,yytext);
 }
 
 void _comment(void)
