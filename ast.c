@@ -584,7 +584,7 @@ void buildAst(Ast *ast,int indent)
             buildAstCmd(c, indent + 4);
             Output(indent, "}\n");
         } else {
-            buildAstCmd(c, indent + 4);
+            buildAstCmd(c, indent);
         }
     } __end;
 }

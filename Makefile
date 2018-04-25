@@ -23,4 +23,4 @@ $(OBJS) : $(HDR)
 	$(CC) -c $(CFLAGS) $< -o $@
 
 clean :
-	-rm -f cmd.tab.c cmd.tab.h lex.yy.c *.o cli_api.[ch] *.output fc.[ch] cmdline.[ch]
+	-rm -f cmd.tab.c cmd.tab.h lex.yy.c *.o cli_api.[ch] *.output fc.[ch] cmdline.[ch] car.cmd
