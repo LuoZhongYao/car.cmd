@@ -273,7 +273,7 @@ static void cli_parse(CmdCase *cs)
             if(cs->child) {
                 if(cs->ast) {
                     Output(8, "int c = getc(stx);\n");
-                    Output(8,"if(EOF != c) { \n");
+                    Output(8,"if('\\r' != c && '\\n' != c) { \n");
                     Output(12, "ungetc(c, stx);\n");
                     Output(12, "user_subcase_%02x(stx)\n", cs->token);
                     Output(8, "} else {\n");
@@ -409,7 +409,7 @@ static void cli_ind(Ast *ast)
                     if(option_send_length)
                         Output(4,"__WRT(iov + _idx,&_slen,1);_idx++;\n");
                 }
-                Output(4,"__IND(iov + _idx,\"%s\");_idx++;\n",c->cmd);
+                Output(4,"__WRT(iov + _idx,\"%s\", sizeof(\"%s\") - 1);_idx++;\n", c->cmd, c->cmd);
                 Output(4,"__FLUSH(iov,%u);\n",nr);
                 Output(4,"free(iov);\n}\n\n");
             }
@@ -577,7 +577,7 @@ void buildAst(Ast *ast,int indent)
         Fn *fn = __mt(c->fn,Fn);
         if(c->next != NULL && c->style == NULL) {
             Output(indent, "int c = getc(stx);\n");
-            Output(indent, "if(EOF != c) { \n");
+            Output(indent, "if('\\r' != c && '\\n' != c) { \n");
             Output(indent + 4, "ungetc(c, stx);\n");
             buildAstCmd(__mt(c->next, Cmd), indent + 4);
             Output(indent, "} else {\n");
