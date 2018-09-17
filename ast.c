@@ -266,7 +266,7 @@ static void cli_parse(CmdCase *cs)
 {
     __begin {
         if(!cs) __break;
-        Output(0,"extern void user_inter_parse(FILE *stx)\n{\n");
+        Output(0,"extern void UI_parse(FILE *stx)\n{\n");
         Output(4,"switch(getc(stx)) {\n");
         while(cs) {
             Output(4,"case '%c': {\n",cs->token);
