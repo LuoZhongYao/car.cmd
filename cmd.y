@@ -136,7 +136,7 @@ arg_type
     | S16       { $$ = S16; }
     | S32       { $$ = S32; }
     | BOOL      { $$ = BOOL;}
-    | CHAR      { $$ = U8; } 
+    | CHAR      { $$ = CHAR; } 
     | BDADDR    { $$ = BDADDR; }
     | UCS2      { $$ = UCS2; }
     ;
@@ -160,7 +160,7 @@ static void header(Ast *ast)
     }
     H_OUT(0,"#ifndef __%s_H__\n#define __%s_H__\n",buffer,buffer);
     traverse_ast(ast);
-    H_OUT(0,"extern void UI_parse(FILE *stx);\n\n");
+    H_OUT(0,"extern void UI_parse(void *m);\n\n");
     H_OUT(0,"\n#endif\n");
     free(fname);
 }

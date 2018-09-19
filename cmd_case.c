@@ -79,9 +79,9 @@ static CmdCase *buildCase(CmdCase *cs,const char *case_name,int indent)
     Output(indent,"case '%c': {\n",cs->token);
     if(cs->child) {
         if(cs->ast) {
-            Output(indent + 4,"s16 c = getc(stx);\n");
+            Output(indent + 4,"s16 c = __getc(m);\n");
             Output(indent + 4,"if('\\r' != c && '\\n' != c) { \n");
-            Output(indent + 8,"ungetc(c,stx);\n");
+            Output(indent + 8,"__ungetc(c, m);\n");
             Output(indent + 8,"%s%02x(stx);\n",case_name,cs->token);
             Output(indent + 4,"} else {\n");
             buildAst(cs->ast,indent + 8);
@@ -103,8 +103,8 @@ static void buildFunction(CmdCase *cs,const char *fn_name)
     __begin {
         if(!cs) __break;
         sprintf(nm,"%s%02x",fn_name,cs->token);
-        Output(0,"static void %s(FILE *stx)\n{\n",nm);
-        Output(4,"switch(getc(stx)) {\n");
+        Output(0,"static void %s(void *m)\n{\n",nm);
+        Output(4,"switch(__getc(m)) {\n");
         buildCase(cs->child,nm,4);
         Output(4,"}\n");
         Output(0,"}\n\n");

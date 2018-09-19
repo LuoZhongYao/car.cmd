@@ -173,6 +173,7 @@ Ast *newArg(int type,bool is_const,int size,const char *symbol)
 static const char *type_name(int type)
 {
     switch(type) {
+    case CHAR: return "char";
     case U8: return "u8";
     case U16: return "u16";
     case U32: return "u32";
@@ -266,21 +267,21 @@ static void cli_parse(CmdCase *cs)
 {
     __begin {
         if(!cs) __break;
-        Output(0,"extern void UI_parse(FILE *stx)\n{\n");
-        Output(4,"switch(getc(stx)) {\n");
+        Output(0,"extern void UI_parse(void *m)\n{\n");
+        Output(4,"switch(__getc(m)) {\n");
         while(cs) {
             Output(4,"case '%c': {\n",cs->token);
             if(cs->child) {
                 if(cs->ast) {
-                    Output(8, "int c = getc(stx);\n");
+                    Output(8, "int c = __getc(m);\n");
                     Output(8,"if('\\r' != c && '\\n' != c) { \n");
-                    Output(12, "ungetc(c, stx);\n");
-                    Output(12, "user_subcase_%02x(stx)\n", cs->token);
+                    Output(12, "__ungetc(c, m);\n");
+                    Output(12, "user_subcase_%02x(m)\n", cs->token);
                     Output(8, "} else {\n");
                     buildAst(cs->ast, 12);
                     Output(8, "}\n");
                 } else {
-                    Output(8, "user_subcase_%02x(stx);\n", cs->token);
+                    Output(8, "user_subcase_%02x(m);\n", cs->token);
                 }
             } else if(cs->ast) {
                 buildAst(cs->ast, 8);
@@ -549,7 +550,7 @@ static void buildAstCmd(Cmd *c, int indent)
     Fn *fn = __mt(c->fn,Fn);
     if(fn->al) {
         cli_parse_arg(fn->al,indent,1);
-        Output(indent,"__scanf(stx,\"");
+        Output(indent,"__scanf(m, \"");
         cli_parse_style(c->style,false);
         Output(0,");\n");
     }
@@ -576,9 +577,9 @@ void buildAst(Ast *ast,int indent)
         Cmd *c = __mt(ast,Cmd);
         Fn *fn = __mt(c->fn,Fn);
         if(c->next != NULL && c->style == NULL) {
-            Output(indent, "int c = getc(stx);\n");
+            Output(indent, "int c = __getc(m);\n");
             Output(indent, "if('\\r' != c && '\\n' != c) { \n");
-            Output(indent + 4, "ungetc(c, stx);\n");
+            Output(indent + 4, "__ungetc(c, m);\n");
             buildAstCmd(__mt(c->next, Cmd), indent + 4);
             Output(indent, "} else {\n");
             buildAstCmd(c, indent + 4);
