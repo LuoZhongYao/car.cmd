@@ -274,7 +274,7 @@ static void cli_parse(CmdCase *cs)
             if(cs->child) {
                 if(cs->ast) {
                     Output(8, "int c = __getc(m);\n");
-                    Output(8,"if('\\r' != c && '\\n' != c) { \n");
+                    Output(8,"if(!__eof(c)) { \n");
                     Output(12, "__ungetc(c, m);\n");
                     Output(12, "user_subcase_%02x(m)\n", cs->token);
                     Output(8, "} else {\n");
@@ -578,7 +578,7 @@ void buildAst(Ast *ast,int indent)
         Fn *fn = __mt(c->fn,Fn);
         if(c->next != NULL && c->style == NULL) {
             Output(indent, "int c = __getc(m);\n");
-            Output(indent, "if('\\r' != c && '\\n' != c) { \n");
+            Output(indent, "if(!__eof(c)) { \n");
             Output(indent + 4, "__ungetc(c, m);\n");
             buildAstCmd(__mt(c->next, Cmd), indent + 4);
             Output(indent, "} else {\n");
@@ -657,5 +657,6 @@ void traverse_ast(Ast *ast)
             }
             break;
         }
+        H_OUT(0, "#define CAR_CMD_SUFFIX_STR \"%s\"", suffix);
     } __end;
 }

@@ -82,12 +82,12 @@ static CmdCase *buildCase(CmdCase *cs,const char *case_name,int indent)
             Output(indent + 4,"s16 c = __getc(m);\n");
             Output(indent + 4,"if('\\r' != c && '\\n' != c) { \n");
             Output(indent + 8,"__ungetc(c, m);\n");
-            Output(indent + 8,"%s%02x(stx);\n",case_name,cs->token);
+            Output(indent + 8,"%s%02x(m);\n",case_name,cs->token);
             Output(indent + 4,"} else {\n");
             buildAst(cs->ast,indent + 8);
             Output(indent + 4,"}\n");
         } else {
-            Output(indent + 4,"%s%02x(stx);\n",case_name,cs->token);
+            Output(indent + 4,"%s%02x(m);\n",case_name,cs->token);
         }
     } else {
         buildAst(cs->ast,indent + 4);
